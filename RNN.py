@@ -5,6 +5,16 @@ from sklearn.model_selection import train_test_split
 from keras import Sequential
 from keras import layers
 
+# Configurar TensorFlow para utilizar la GPU
+import tensorflow as tf
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+if physical_devices:
+    try:
+        for device in physical_devices:
+            tf.config.experimental.set_memory_growth(device, True)
+        print(f"Configured {len(physical_devices)} GPU(s) for use.")
+    except RuntimeError as e:
+        print(e)
 
 # Cargar el dataset vectorizado
 input_file_path = r'C:\Universidad\2024-1\Seminario 1\RNN\textos_vectorizados_tfidf.csv'
@@ -48,5 +58,3 @@ print(f'Precisión del modelo: {accuracy * 100:.2f}%')
 
 # Guardar el modelo entrenado (opcional)
 model.save(r'C:\Universidad\2024-1\Seminario 1\RNN\modelo_rnn_tfidf.h5')
-
-
