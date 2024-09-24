@@ -44,16 +44,16 @@ model.add(layers.Dropout(0.3))
 model.add(layers.LSTM(64))
 model.add(layers.Dropout(0.3))
 model.add(layers.Dense(32, activation='relu'))
-model.add(layers.Dense(1, activation='sigmoid'))
+model.add(layers.Dense(3, activation='softmax'))
 
 # Compilar el modelo
-model.compile(loss='binary_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=['accuracy'])
+model.compile(loss='SparsecategoricalEntropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=['accuracy'])
 
 # Añadir EarlyStopping para detener el entrenamiento cuando la validación no mejore
-early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+#early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
 # Entrenar el modelo
-history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_data=(X_test, y_test), callbacks=[early_stopping])
+history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_data=(X_test, y_test))
 
 # Evaluar el modelo
 loss, accuracy = model.evaluate(X_test, y_test)
