@@ -13,32 +13,16 @@ from scipy.stats import mode
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-# Cargar el dataset vectorizado
-input_file_path = r'C:\Universidad\2024-1\Seminario 1\RNN\textos_vectorizados_tfidf_manual1.csv'
-data = pd.read_csv(input_file_path)
-
-# Asumir que la columna 'sentimiento' es el target
-# Convertir 'sentimiento' a valores numéricos
-# Negativo es 2 para que sea compatible con SparseCategoricalCrossEntropy
-data['sentimiento'] = data['sentimiento'].map({'positivo': 1, 'neutral': 0, 'negativo': 2})
-
-# Definir características (X) y etiqueta (y)
-X = data.drop(columns=['Producto', 'Marca', 'Modelo', 'calificacion', 'Fecha', 'Texto', 'texto_limpio', 'sentimiento', 'tokens','dominant_topic', 'category'])
-y = data['sentimiento']
-
+# Cargar los datasets vectorizados y las etiquetas desde archivos .npy
+X = np.load(r'C:\Universidad\2024-1\Seminario 1\RNN\textos_vectorizados_word2vec_manual_padded.npy')
+y = np.load(r'C:\Universidad\2024-1\Seminario 1\RNN\sentimientos.npy')
 
 # Dividir los datos en conjuntos de entrenamiento y prueba
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Convertir a matrices NumPy
-X_train = np.array(X_train)
-X_test = np.array(X_test)
-y_train = np.array(y_train)
-y_test = np.array(y_test)
-
-# Redimensionar para RNN (agregar una dimensión)
-X_train = np.expand_dims(X_train, axis=2)
-X_test = np.expand_dims(X_test, axis=2)
+# Redimensionar los datos para la RNN (agregar una dimensión si es necesario)
+#X_train = np.expand_dims(X_train, axis=2)  # Asegura que X_train tenga el formato (samples, timesteps, features)
+#X_test = np.expand_dims(X_test, axis=2)
 
 # Verifica si hay NaN o valores nulos en las etiquetas
 print(np.isnan(y_train).sum())
@@ -64,18 +48,17 @@ model.add(layers.Dropout(0.3))
 model.add(layers.LSTM(64))
 model.add(layers.Dropout(0.3))
 model.add(layers.Dense(32, activation='relu'))
-model.add(layers.Dense(3, activation='softmax'))
+model.add(layers.Dense(3, activation='softmax'))  # Tres clases: positivo, neutral, negativo
 
 # Compilar el modelo
-model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(), optimizer= tf.keras.optimizers.Adam(), metrics=['accuracy'])
-#model.compile(loss='SparsecategoricalEntropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=['accuracy'])
+model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(), optimizer=tf.keras.optimizers.Adam(), metrics=['accuracy'])
 
 # Añadir EarlyStopping para detener el entrenamiento cuando la validación no mejore
-#early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+# early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
 # Entrenar el modelo
-history = model.fit(X_train, y_train, epochs=15, batch_size=64, validation_data=(X_test, y_test))
-
+history = model.fit(X_train, y_train, epochs=25, batch_size=64, validation_data=(X_test, y_test))
+  
 # Evaluar el modelo
 loss, accuracy = model.evaluate(X_test, y_test)
 print(f'Precisión del modelo: {accuracy * 100:.2f}%')
@@ -127,20 +110,5 @@ plt.xlabel('Época')
 plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1))
 plt.show()
 
-# Resumen del sentimiento por tópicos
-topic_sentiment_summary = data.groupby(['category', 'sentimiento']).size().unstack().fillna(0)
-print(topic_sentiment_summary)
-
-# Gráfico de barras del sentimiento por tópicos
-plt.figure(figsize=(10, 6))
-topic_sentiment_summary.plot(kind='bar', color=['red', 'blue', 'green'], ax=plt.gca())
-plt.title('Resumen del Sentimiento por Tópicos')
-plt.xlabel('Tópico')
-plt.ylabel('Número de Reseñas')
-plt.legend(title='Sentimiento', labels=['Negativo', 'Neutral', 'Positivo'], loc='upper right')
-plt.xticks(rotation=45, ha='right')
-plt.tight_layout()
-plt.show()
-
 # Guardar el modelo entrenado (opcional)
-model.save(r'C:\Universidad\2024-1\Seminario 1\RNN\modelo_rnn_tfidf.h5')
+model.save(r'C:\Universidad\2024-1\Seminario 1\RNN\modelo_rnn_word2vec.h5')
